@@ -65,7 +65,7 @@ export class UserResolver {
       return {
         errors: [
           {
-            field: "Username",
+            field: "username",
             message: "Length must be greater than 2!",
           },
         ],
@@ -76,7 +76,7 @@ export class UserResolver {
       return {
         errors: [
           {
-            field: "Password",
+            field: "password",
             message: "Length must be greater than 2!",
           },
         ],
@@ -96,7 +96,7 @@ export class UserResolver {
         return {
           errors: [
             {
-              field: "Username",
+              field: "username",
               message: "Username taken, try another!",
             },
           ],
@@ -122,7 +122,7 @@ export class UserResolver {
       return {
         errors: [
           {
-            field: "Username",
+            field: "username",
             message: "That username does not exist!",
           },
         ],
@@ -135,7 +135,7 @@ export class UserResolver {
       return {
         errors: [
           {
-            field: "Password",
+            field: "password",
             message: "Incorrect password!",
           },
         ],

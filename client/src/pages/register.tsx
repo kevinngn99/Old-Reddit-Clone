@@ -11,6 +11,7 @@ import {
 import { Wrapper } from "../components/Wrapper";
 import { InputField } from "../components/InputField";
 import { useMutation } from "urql";
+import { useRouter } from "next/router";
 
 interface registerProps {}
 
@@ -30,18 +31,26 @@ mutation Register($username: String!, $password: String!) {
 `;
 
 const Register: React.FC<registerProps> = ({}) => {
+  const router = useRouter();
   const [, register] = useMutation(REGISTER_MUTATION);
 
   return (
     <Wrapper variant="small">
       <Formik
         initialValues={{ username: "", password: "" }}
-        onSubmit={async (values, {setErrors}) => {
+        onSubmit={async (values, { setErrors }) => {
           const response = await register(values);
           if (response.data?.register.errors) {
-            setErrors({
-              username: response.data?.register.errors[0].message
-            })
+            const errorMap: Record<string, string> = {};
+
+            response.data.register.errors.forEach(({ field, message }) => {
+              errorMap[field] = message;
+            });
+
+            setErrors(errorMap);
+          }
+          else if (response.data?.register.user) {
+            router.push('/');
           }
         }}
       >
@@ -66,7 +75,7 @@ const Register: React.FC<registerProps> = ({}) => {
               colorScheme="teal"
               isLoading={isSubmitting}
             >
-              Register
+              Sign Up
             </Button>
           </Form>
         )}

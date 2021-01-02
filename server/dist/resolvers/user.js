@@ -83,7 +83,7 @@ let UserResolver = class UserResolver {
                 return {
                     errors: [
                         {
-                            field: "Username",
+                            field: "username",
                             message: "Length must be greater than 2!",
                         },
                     ],
@@ -93,7 +93,7 @@ let UserResolver = class UserResolver {
                 return {
                     errors: [
                         {
-                            field: "Password",
+                            field: "password",
                             message: "Length must be greater than 2!",
                         },
                     ],
@@ -112,7 +112,7 @@ let UserResolver = class UserResolver {
                     return {
                         errors: [
                             {
-                                field: "Username",
+                                field: "username",
                                 message: "Username taken, try another!",
                             },
                         ],
@@ -132,7 +132,7 @@ let UserResolver = class UserResolver {
                 return {
                     errors: [
                         {
-                            field: "Username",
+                            field: "username",
                             message: "That username does not exist!",
                         },
                     ],
@@ -143,7 +143,7 @@ let UserResolver = class UserResolver {
                 return {
                     errors: [
                         {
-                            field: "Password",
+                            field: "password",
                             message: "Incorrect password!",
                         },
                     ],
