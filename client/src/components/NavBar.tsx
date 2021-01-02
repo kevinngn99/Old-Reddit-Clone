@@ -1,23 +1,28 @@
 import React from "react";
 import { Box, Link, Flex, Button } from "@chakra-ui/react";
 import NextLink from "next/link";
-import { useQuery } from "urql";
+import { useMutation, useQuery } from "urql";
 
 interface NavBarProps {}
 
-const ME_QUERY = {
-  query: `
-    query Me {
-        me {
-            id
-            username
-        }
-    }
-    `,
-};
+const ME_QUERY = `
+query Me {
+  me {
+    id
+    username
+  }
+}
+`;
+
+const LOGOUT_MUTATION = `
+mutation {
+  logout
+}
+`;
 
 const NavBar: React.FC<NavBarProps> = ({}) => {
-  const [{ data, fetching }] = useQuery(ME_QUERY);
+  const [{ data, fetching }] = useQuery({query: ME_QUERY, pause: true});
+  const [{ fetching: logoutFetching }, logout] = useMutation(LOGOUT_MUTATION);
   let body;
 
   if (fetching) {
@@ -37,7 +42,13 @@ const NavBar: React.FC<NavBarProps> = ({}) => {
     body = (
       <Flex>
         <Box mr={2}>{data.me.username}</Box>
-        <Button variant="link">Logout</Button>
+        <Button
+          onClick={() => logout()}
+          isLoading={logoutFetching}
+          variant="link"
+        >
+          Logout
+        </Button>
       </Flex>
     );
   }
