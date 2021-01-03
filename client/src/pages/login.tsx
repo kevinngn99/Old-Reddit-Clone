@@ -14,8 +14,8 @@ import { createUrqlClient } from "../utils/createUrqlClient";
 interface loginProps {}
 
 const LOGIN_MUTATION = `
-mutation Login($username: String!, $password: String!) {
-  login(options: { username: $username, password: $password}) {
+mutation Login($usernameOrEmail: String!, $password: String!) {
+  login(usernameOrEmail: $usernameOrEmail, password: $password) {
     errors {
       field
       message
@@ -35,7 +35,7 @@ const Login: React.FC<loginProps> = ({}) => {
   return (
     <Wrapper variant="small">
       <Formik
-        initialValues={{ username: "", password: "" }}
+        initialValues={{ usernameOrEmail: "", password: "" }}
         onSubmit={async (values, { setErrors }) => {
           const response = await login(values);
           if (response.data?.login.errors) {
@@ -55,9 +55,9 @@ const Login: React.FC<loginProps> = ({}) => {
         {({ isSubmitting }) => (
           <Form>
             <InputField
-              name="username"
-              placeholder="username"
-              label="Username"
+              name="usernameOrEmail"
+              placeholder="username or email"
+              label="Username or Email"
             />
             <Box mt={4}>
               <InputField

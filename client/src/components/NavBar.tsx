@@ -2,6 +2,7 @@ import React from "react";
 import { Box, Link, Flex, Button } from "@chakra-ui/react";
 import NextLink from "next/link";
 import { useMutation, useQuery } from "urql";
+import { isServer } from "../utils/isServer";
 
 interface NavBarProps {}
 
@@ -21,7 +22,7 @@ mutation {
 `;
 
 const NavBar: React.FC<NavBarProps> = ({}) => {
-  const [{ data, fetching }] = useQuery({query: ME_QUERY, pause: true});
+  const [{ data, fetching }] = useQuery({query: ME_QUERY, pause: isServer()});
   const [{ fetching: logoutFetching }, logout] = useMutation(LOGOUT_MUTATION);
   let body;
 

@@ -37,6 +37,10 @@ __decorate([
 __decorate([
     type_graphql_1.Field(),
     __metadata("design:type", String)
+], UsernamePassInput.prototype, "email", void 0);
+__decorate([
+    type_graphql_1.Field(),
+    __metadata("design:type", String)
 ], UsernamePassInput.prototype, "password", void 0);
 UsernamePassInput = __decorate([
     type_graphql_1.InputType()
@@ -89,6 +93,26 @@ let UserResolver = class UserResolver {
                     ],
                 };
             }
+            if (options.username.includes('@')) {
+                return {
+                    errors: [
+                        {
+                            field: "username",
+                            message: "Username cannot include @!",
+                        },
+                    ],
+                };
+            }
+            if (!options.email.includes('@')) {
+                return {
+                    errors: [
+                        {
+                            field: "email",
+                            message: "Invalid email!",
+                        },
+                    ],
+                };
+            }
             if (options.password.length <= 2) {
                 return {
                     errors: [
@@ -103,6 +127,7 @@ let UserResolver = class UserResolver {
             const user = em.create(User_1.User, {
                 username: options.username,
                 password: hashedPassword,
+                email: options.email
             });
             try {
                 yield em.persistAndFlush(user);
@@ -125,20 +150,20 @@ let UserResolver = class UserResolver {
             };
         });
     }
-    login(options, { em, req }) {
+    login(usernameOrEmail, password, { em, req }) {
         return __awaiter(this, void 0, void 0, function* () {
-            const user = yield em.findOne(User_1.User, { username: options.username });
+            const user = yield em.findOne(User_1.User, usernameOrEmail.includes('@') ? { email: usernameOrEmail } : { username: usernameOrEmail });
             if (!user) {
                 return {
                     errors: [
                         {
-                            field: "username",
+                            field: "usernameOrEmail",
                             message: "That username does not exist!",
                         },
                     ],
                 };
             }
-            const valid = yield argon2_1.default.verify(user.password, options.password);
+            const valid = yield argon2_1.default.verify(user.password, password);
             if (!valid) {
                 return {
                     errors: [
@@ -183,10 +208,11 @@ __decorate([
 ], UserResolver.prototype, "register", null);
 __decorate([
     type_graphql_1.Mutation(() => UserResponse),
-    __param(0, type_graphql_1.Arg("options")),
-    __param(1, type_graphql_1.Ctx()),
+    __param(0, type_graphql_1.Arg("usernameOrEmail")),
+    __param(1, type_graphql_1.Arg("password")),
+    __param(2, type_graphql_1.Ctx()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [UsernamePassInput, Object]),
+    __metadata("design:paramtypes", [String, String, Object]),
     __metadata("design:returntype", Promise)
 ], UserResolver.prototype, "login", null);
 __decorate([
