@@ -74,6 +74,48 @@ UserResponse = __decorate([
     type_graphql_1.ObjectType()
 ], UserResponse);
 let UserResolver = class UserResolver {
+    changePassword(token, newPassword, { em, req, redis }) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const userId = yield redis.get("forget-password:" + token);
+            if (!userId) {
+                return {
+                    errors: [
+                        {
+                            field: "newPassword",
+                            message: "This link is invalid or has expired, please visit here to change your password.",
+                        },
+                    ],
+                };
+            }
+            const user = yield em.findOne(User_1.User, { id: parseInt(userId) });
+            if (!user) {
+                return {
+                    errors: [
+                        {
+                            field: "newPassword",
+                            message: "The account whose password you are trying to change no longer exists.",
+                        },
+                    ],
+                };
+            }
+            if (newPassword.length <= 2) {
+                return {
+                    errors: [
+                        {
+                            field: "newPassword",
+                            message: "Length must be greater than 2!",
+                        },
+                    ],
+                };
+            }
+            const hashedPassword = yield argon2_1.default.hash(newPassword);
+            user.password = hashedPassword;
+            yield em.persistAndFlush(user);
+            redis.del("forget-password:" + token);
+            req.session.userId = user.id;
+            return { user };
+        });
+    }
     forgotPassword(email, { em, redis }) {
         return __awaiter(this, void 0, void 0, function* () {
             const user = yield em.findOne(User_1.User, { email });
@@ -208,6 +250,15 @@ let UserResolver = class UserResolver {
         }));
     }
 };
+__decorate([
+    type_graphql_1.Mutation(() => UserResponse),
+    __param(0, type_graphql_1.Arg("token")),
+    __param(1, type_graphql_1.Arg("newPassword")),
+    __param(2, type_graphql_1.Ctx()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], UserResolver.prototype, "changePassword", null);
 __decorate([
     type_graphql_1.Mutation(() => Boolean),
     __param(0, type_graphql_1.Arg("email")),

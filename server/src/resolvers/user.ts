@@ -50,6 +50,61 @@ class UserResponse {
 
 @Resolver()
 export class UserResolver {
+  @Mutation(() => UserResponse)
+  async changePassword(
+    @Arg("token") token: string,
+    @Arg("newPassword") newPassword: string,
+    @Ctx() { em, req, redis }: MyContext
+  ): Promise<UserResponse> {
+    const userId = await redis.get("forget-password:" + token);
+
+    if (!userId) {
+      return {
+        errors: [
+          {
+            field: "newPassword",
+            message:
+              "This link is invalid or has expired, please visit here to change your password.",
+          },
+        ],
+      };
+    }
+
+    const user = await em.findOne(User, { id: parseInt(userId) });
+
+    if (!user) {
+      return {
+        errors: [
+          {
+            field: "newPassword",
+            message:
+              "The account whose password you are trying to change no longer exists.",
+          },
+        ],
+      };
+    }
+
+    if (newPassword.length <= 2) {
+      return {
+        errors: [
+          {
+            field: "newPassword",
+            message: "Length must be greater than 2!",
+          },
+        ],
+      };
+    }
+
+    const hashedPassword = await argon2.hash(newPassword);
+    user.password = hashedPassword;
+    await em.persistAndFlush(user);
+
+    redis.del("forget-password:" + token);
+    req.session.userId = user.id;
+
+    return { user };
+  }
+
   @Mutation(() => Boolean)
   async forgotPassword(
     @Arg("email") email: string,
