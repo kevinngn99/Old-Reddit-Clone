@@ -2,6 +2,8 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
+  "/change-password/[token]": "pages/change-password/[token].js",
   "/": "pages/index.js",
-  "/change-password/[token]": "pages/change-password/[token].js"
+  "/login": "pages/login.js",
+  "/forgot-password": "pages/forgot-password.js"
 }

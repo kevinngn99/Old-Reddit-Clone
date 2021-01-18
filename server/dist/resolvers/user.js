@@ -74,20 +74,21 @@ UserResponse = __decorate([
     type_graphql_1.ObjectType()
 ], UserResponse);
 let UserResolver = class UserResolver {
-    changePassword(token, newPassword, { em, req, redis }) {
+    changePassword(token, newPassword, { req, redis }) {
         return __awaiter(this, void 0, void 0, function* () {
             const userId = yield redis.get("forget-password:" + token);
             if (!userId) {
                 return {
                     errors: [
                         {
-                            field: "newPassword",
+                            field: "token",
                             message: "This link is invalid or has expired, please visit here to change your password.",
                         },
                     ],
                 };
             }
-            const user = yield em.findOne(User_1.User, { id: parseInt(userId) });
+            const userIdNum = parseInt(userId);
+            const user = yield User_1.User.findOne(userIdNum);
             if (!user) {
                 return {
                     errors: [
@@ -109,16 +110,15 @@ let UserResolver = class UserResolver {
                 };
             }
             const hashedPassword = yield argon2_1.default.hash(newPassword);
-            user.password = hashedPassword;
-            yield em.persistAndFlush(user);
-            redis.del("forget-password:" + token);
+            yield User_1.User.update({ id: userIdNum }, { password: hashedPassword });
+            yield redis.del("forget-password:" + token);
             req.session.userId = user.id;
             return { user };
         });
     }
-    forgotPassword(email, { em, redis }) {
+    forgotPassword(email, { redis }) {
         return __awaiter(this, void 0, void 0, function* () {
-            const user = yield em.findOne(User_1.User, { email });
+            const user = yield User_1.User.findOne({ where: { email: email } });
             if (!user) {
                 return true;
             }
@@ -129,17 +129,24 @@ let UserResolver = class UserResolver {
             return true;
         });
     }
-    me({ req, em }) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (!req.session.userId) {
-                return null;
-            }
-            const user = yield em.findOne(User_1.User, { id: req.session.userId });
-            return user;
-        });
+    me({ req }) {
+        if (!req.session.userId) {
+            return null;
+        }
+        return User_1.User.findOne(req.session.userId);
     }
-    register(options, { req, em }) {
+    register(options, { req }) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (!options.email.includes("@")) {
+                return {
+                    errors: [
+                        {
+                            field: "email",
+                            message: "Invalid email!",
+                        },
+                    ],
+                };
+            }
             if (options.username.length <= 2) {
                 return {
                     errors: [
@@ -160,16 +167,6 @@ let UserResolver = class UserResolver {
                     ],
                 };
             }
-            if (!options.email.includes("@")) {
-                return {
-                    errors: [
-                        {
-                            field: "email",
-                            message: "Invalid email!",
-                        },
-                    ],
-                };
-            }
             if (options.password.length <= 2) {
                 return {
                     errors: [
@@ -181,37 +178,66 @@ let UserResolver = class UserResolver {
                 };
             }
             const hashedPassword = yield argon2_1.default.hash(options.password);
-            const user = em.create(User_1.User, {
-                username: options.username,
-                password: hashedPassword,
-                email: options.email,
-            });
             try {
-                yield em.persistAndFlush(user);
+                const user = yield User_1.User.create({
+                    username: options.username,
+                    password: hashedPassword,
+                    email: options.email,
+                }).save();
+                req.session.userId = user.id;
+                return {
+                    user,
+                };
             }
             catch (err) {
                 if (err.code === "23505") {
+                    if (err.detail.includes("email")) {
+                        return {
+                            errors: [
+                                {
+                                    field: "email",
+                                    message: "This email is already in use!",
+                                },
+                            ],
+                        };
+                    }
+                    else {
+                        return {
+                            errors: [
+                                {
+                                    field: "username",
+                                    message: "Username taken, try another!",
+                                },
+                            ],
+                        };
+                    }
+                }
+                else {
                     return {
                         errors: [
                             {
+                                field: "email",
+                                message: "An error has occured, please try again!",
+                            },
+                            {
                                 field: "username",
-                                message: "Username taken, try another!",
+                                message: "An error has occured, please try again!",
+                            },
+                            {
+                                field: "password",
+                                message: "An error has occured, please try again!",
                             },
                         ],
                     };
                 }
             }
-            req.session.userId = user.id;
-            return {
-                user,
-            };
         });
     }
-    login(usernameOrEmail, password, { em, req }) {
+    login(usernameOrEmail, password, { req }) {
         return __awaiter(this, void 0, void 0, function* () {
-            const user = yield em.findOne(User_1.User, usernameOrEmail.includes("@")
-                ? { email: usernameOrEmail }
-                : { username: usernameOrEmail });
+            const user = yield User_1.User.findOne(usernameOrEmail.includes("@")
+                ? { where: { email: usernameOrEmail } }
+                : { where: { username: usernameOrEmail } });
             if (!user) {
                 return {
                     errors: [
@@ -272,7 +298,7 @@ __decorate([
     __param(0, type_graphql_1.Ctx()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:returntype", void 0)
 ], UserResolver.prototype, "me", null);
 __decorate([
     type_graphql_1.Mutation(() => UserResponse),
